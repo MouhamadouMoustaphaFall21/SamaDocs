@@ -1,9 +1,9 @@
 services:
   - type: web
     name: samadocs
-    runtime: php
     plan: free
     rootDir: .
+    dockerfilePath: ./Dockerfile
     envVars:
       - key: APP_ENV
         value: production
