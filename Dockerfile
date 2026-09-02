@@ -1,52 +1,38 @@
-FROM php:8.2-apache
+# Syntaxe stable
+FROM php:8.1-fpm AS builder
 
-# Extensions PHP nécessaires à Laravel + SQLite
-RUN apt-get update && apt-get install -y \
-    git \
-    unzip \
-    libsqlite3-dev \
-    libzip-dev \
-    && docker-php-ext-install pdo_sqlite zip \
-    && a2enmod rewrite \
-    && rm -rf /var/lib/apt/lists/*
+# Dépendances système
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git unzip libzip-dev libpng-dev libjpeg62-turbo-dev libfreetype6-dev \
+    nginx curl \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo pdo_mysql pdo_sqlite zip gd mbstring exif \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Installer Composer
+# Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# Copier les fichiers du projet
+# Copie du code applicatif
 COPY . .
 
-# Installer les dépendances PHP
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+# Désactiver les démons système gérés par le conteneur
+RUN rm -f /etc/nginx/sites-enabled/default
 
-# Installer Node.js + npm
-RUN apt-get update && apt-get install -y nodejs npm \
-    && npm install \
-    && npm run build \
-    && rm -rf /var/lib/apt/lists/*
+# Installer les dépendances (sans dev)
+RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
-# Apache doit servir le dossier public de Laravel
-ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
+# Droits et dossiers
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
+    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' \
-    /etc/apache2/sites-available/*.conf \
-    /etc/apache2/apache2.conf \
-    /etc/apache2/conf-available/*.conf
+# Copie de la config nginx
+COPY docker/nginx.conf /etc/nginx/nginx.conf
+COPY docker/php.ini /usr/local/etc/php/conf.d/zz-app.ini
 
-# Permissions Laravel
-RUN chown -R www-data:www-data /var/www/html/storage \
-    /var/www/html/bootstrap/cache \
-    /var/www/html/database
+EXPOSE 8080
 
-# Configuration Apache
-RUN printf '<Directory /var/www/html/public>\n\
-    AllowOverride All\n\
-    Require all granted\n\
-</Directory>\n' > /etc/apache2/conf-available/laravel.conf \
-    && a2enconf laravel
+WORKDIR /var/www/html
 
-EXPOSE 80
-
-CMD ["apache2-foreground"]
+CMD ["bash", "/var/www/html/render/start-docker.sh"]
