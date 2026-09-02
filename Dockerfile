@@ -4,7 +4,7 @@ FROM php:8.1-fpm AS builder
 # Dépendances système
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git unzip libzip-dev libpng-dev libjpeg62-turbo-dev libfreetype6-dev \
-    nginx curl \
+    libsqlite3-dev pkg-config nginx curl \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install pdo pdo_mysql pdo_sqlite zip gd mbstring exif \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
