@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Notifications\WelcomeMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -57,6 +58,13 @@ class AuthController extends Controller
             'email' => $data['email'],
             'password' => $data['password'],
         ]);
+
+        // Email de bienvenue automatique
+        try {
+            $user->notify(new WelcomeMail($user));
+        } catch (\Throwable $e) {
+            // L'envoi de mail ne doit pas bloquer l'inscription
+        }
 
         Auth::login($user);
         $request->session()->regenerate();

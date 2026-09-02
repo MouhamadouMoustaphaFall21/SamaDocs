@@ -56,7 +56,7 @@
             <input type="checkbox" name="remember">
             <span style="font-size:0.875rem;color:var(--text-secondary);">Se souvenir de moi</span>
           </label>
-          <a href="#" style="font-size:0.875rem;color:var(--primary-600);font-weight:500;">Mot de passe oublié ?</a>
+          <a href="{{ route('password.request') }}" style="font-size:0.875rem;color:var(--primary-600);font-weight:500;">Mot de passe oublié ?</a>
         </div>
 
         <button type="submit" class="btn btn-primary btn-lg w-full">Se connecter</button>
