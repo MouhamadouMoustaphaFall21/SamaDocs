@@ -13,7 +13,8 @@ storage/app/public/documents/*
 public/storage
 .env
 .env.backup
-.env.*
+.env.local
+.env.production
 database/database.sqlite
 database/*.sqlite
 *.sqlite
