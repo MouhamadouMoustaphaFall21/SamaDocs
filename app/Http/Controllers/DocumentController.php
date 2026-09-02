@@ -60,10 +60,22 @@ class DocumentController extends Controller
 
         if ($request->hasFile('file')) {
             $file = $request->file('file');
-            $filePath = $file->store('documents', 'public');
+            $localPath = $file->store('documents', 'public');
             $fileName = $file->getClientOriginalName();
             $fileSize = $file->getSize();
             $fileType = strtolower($file->getClientOriginalExtension());
+
+            // Tentative d'envoi vers Cloudinary pour persistance cloud (si configuré)
+            $cloudinary = new \App\Services\CloudinaryService();
+            $cloudUrl = $cloudinary->upload($localPath);
+
+            // On garde l'URL cloud si disponible, sinon le chemin local (démo)
+            $filePath = $cloudUrl ?: $localPath;
+
+            // Si l'envoi cloud a réussi, on supprime la copie locale (léger)
+            if ($cloudUrl) {
+                Storage::disk('public')->delete($localPath);
+            }
         }
 
         $user->documents()->create([
@@ -114,7 +126,17 @@ class DocumentController extends Controller
 
     public function destroy(Request $request, $id)
     {
-        $request->user()->documents()->findOrFail($id)->delete();
+        $document = $request->user()->documents()->findOrFail($id);
+
+        // Suppression du fichier cloud ou local selon le mode de stockage
+        $service = new \App\Services\CloudinaryService();
+        if ($document->file_path && $service->isStoredOnCloud($document->file_path)) {
+            $service->delete($document->file_path);
+        } elseif ($document->file_path && Storage::disk('public')->exists($document->file_path)) {
+            Storage::disk('public')->delete($document->file_path);
+        }
+
+        $document->delete();
 
         return redirect()->route('documents.index')->with('success', 'Document déplacé vers la corbeille');
     }
@@ -123,8 +145,18 @@ class DocumentController extends Controller
     {
         $document = $request->user()->documents()->findOrFail($id);
 
+        $downloadName = $document->file_name ?: $document->name;
+
+        // Fichier stocké sur le cloud (URL Cloudinary)
+        if ($document->file_path && str_starts_with($document->file_path, 'http')) {
+            $service = new \App\Services\CloudinaryService();
+            $url = $service->signedDownloadUrl($document->file_path);
+            return redirect()->away($url);
+        }
+
+        // Fichier local
         if ($document->file_path && Storage::disk('public')->exists($document->file_path)) {
-            return Storage::disk('public')->download($document->file_path, $document->file_name ?: $document->name);
+            return Storage::disk('public')->download($document->file_path, $downloadName);
         }
 
         return back()->with('error', 'Fichier introuvable.');
