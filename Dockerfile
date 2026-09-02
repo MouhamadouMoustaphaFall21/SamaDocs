@@ -1,7 +1,9 @@
 # Syntaxe stable
-FROM php:8.1-fpm AS builder
+# v3 - fix sqlite headers + invalidation cache
+FROM php:8.1-fpm
 
-# Dépendances système
+# Dépendances système (une seule couche, invalidation via ENV build)
+ENV SAMADOCS_BUILD=2026-09-02-3
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git unzip libzip-dev libpng-dev libjpeg62-turbo-dev libfreetype6-dev \
     libsqlite3-dev pkg-config nginx curl \
@@ -17,9 +19,6 @@ WORKDIR /var/www/html
 # Copie du code applicatif
 COPY . .
 
-# Désactiver les démons système gérés par le conteneur
-RUN rm -f /etc/nginx/sites-enabled/default
-
 # Installer les dépendances (sans dev)
 RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
@@ -30,6 +29,9 @@ RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cac
 # Copie de la config nginx
 COPY docker/nginx.conf /etc/nginx/nginx.conf
 COPY docker/php.ini /usr/local/etc/php/conf.d/zz-app.ini
+
+# Désactiver le site nginx par defaut si present
+RUN rm -f /etc/nginx/sites-enabled/default
 
 EXPOSE 8080
 
