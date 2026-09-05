@@ -15,7 +15,10 @@ return [
     |
     */
 
-    'default' => env('DB_CONNECTION', 'mysql'),
+    // En production (Render), DATABASE_URL (PostgreSQL managé) est fournie :
+    // on bascule alors automatiquement sur pgsql, même si un DB_CONNECTION
+    // obsolète (ex: sqlite) est encore présent dans les variables du service.
+    'default' => env('DATABASE_URL') ? 'pgsql' : env('DB_CONNECTION', 'mysql'),
 
     /*
     |--------------------------------------------------------------------------

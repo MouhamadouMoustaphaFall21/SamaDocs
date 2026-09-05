@@ -20,16 +20,22 @@ if [ -z "${APP_KEY}" ] && ! grep -q '^APP_KEY=[^[:space:]]' .env; then
 fi
 
 # Forcer PostgreSQL (DATABASE_URL est fournie par Render via le service managé)
+export DATABASE_URL
+if [ -z "$DATABASE_URL" ]; then
+    echo "!! DATABASE_URL manquante : la base PostgreSQL n'a pas été branchée sur ce service."
+    echo "!! Créez une base (Render > New + > PostgreSQL) et ajoutez DATABASE_URL aux env vars."
+    exit 1
+fi
 sed -i 's/^DB_CONNECTION=.*/DB_CONNECTION=pgsql/' .env || true
 grep -q '^DB_CONNECTION=' .env || echo "DB_CONNECTION=pgsql" >> .env
-if [ -n "$DATABASE_URL" ]; then
-    sed -i "s|^DATABASE_URL=.*|DATABASE_URL=$DATABASE_URL|" .env || true
-    grep -q '^DATABASE_URL=' .env || echo "DATABASE_URL=$DATABASE_URL" >> .env
-    # Les variables DB_* individuelles peuvent rester, DATABASE_URL prime dans Laravel
+if grep -q '^DATABASE_URL=' .env; then
+    sed -i "s|^DATABASE_URL=.*|DATABASE_URL=$DATABASE_URL|" .env
+else
+    echo "DATABASE_URL=$DATABASE_URL" >> .env
 fi
 
 echo "==> Migrations + seeds"
-php artisan migrate --force --seed
+php artisan migrate --database=pgsql --force --seed
 
 echo "==> Storage link"
 php artisan storage:link || true
