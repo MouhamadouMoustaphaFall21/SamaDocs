@@ -151,7 +151,7 @@
 <!-- MODAL AJOUTER UN DOCUMENT -->
 <div class="modal-overlay" id="add-doc-modal">
   <div class="modal">
-    <form method="POST" action="{{ route('documents.store') }}" enctype="multipart/form-data">
+    <form method="POST" action="{{ route('documents.store') }}" enctype="multipart/form-data" id="add-doc-form">
       @csrf
       <div class="modal-header">
         <h3 class="heading-sm">Ajouter un document</h3>
@@ -165,6 +165,19 @@
           <div class="upload-zone-text">ou <a href="#" style="color:var(--primary-600);font-weight:500;" onclick="event.preventDefault();document.getElementById('file-input').click();">Choisir un fichier</a></div>
           <div class="upload-zone-formats">PDF, DOC, DOCX, XLS, XLSX, PPT, JPG, PNG</div>
         </div>
+
+        <div id="upload-progress" class="upload-progress" style="display:none;margin-top:16px;">
+          <div class="upload-progress-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+          <div class="upload-progress-info">
+            <div class="upload-progress-name">Transfert de votre document...</div>
+            <div class="upload-progress-meta"><span id="upload-progress-label">0%</span> envoyé</div>
+            <div style="height:6px;background:var(--bg-primary);border-radius:999px;overflow:hidden;margin-top:8px;">
+              <div class="upload-progress-bar" style="width:0%;height:100%;background:var(--primary-500);transition:width .2s ease;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="upload-error" style="display:none;margin-top:16px;"></div>
 
         <div class="form-group" style="margin-top:20px;">
           <label class="form-label" for="doc-name">Nom du document</label>

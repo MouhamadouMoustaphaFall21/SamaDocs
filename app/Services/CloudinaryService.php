@@ -25,7 +25,7 @@ class CloudinaryService
         return !empty($this->cloudName) && !empty($this->apiKey) && !empty($this->apiSecret);
     }
 
-    public function upload(string $localPath): ?string
+    public function upload(string $localPath, string $originalName = ''): ?string
     {
         if (!$this->isConfigured() || !Storage::disk('public')->exists($localPath)) {
             return null;
@@ -36,17 +36,22 @@ class CloudinaryService
 
         $signature = $this->sign(['public_id' => $publicId, 'timestamp' => $timestamp]);
 
+        $stream = null;
         try {
-            $response = Http::attach(
-                'file',
-                Storage::disk('public')->get($localPath),
-                basename($localPath)
-            )->post($this->uploadEndpoint(), [
-                'public_id' => $publicId,
-                'timestamp' => $timestamp,
-                'signature' => $signature,
-                'api_key' => $this->apiKey,
-            ]);
+            $stream = fopen(Storage::disk('public')->path($localPath), 'r');
+            if ($stream === false) {
+                return null;
+            }
+
+            $response = Http::connectTimeout(10)
+                ->timeout(30)
+                ->attach('file', $stream, $originalName ?: basename($localPath))
+                ->post($this->uploadEndpoint(), [
+                    'public_id' => $publicId,
+                    'timestamp' => $timestamp,
+                    'signature' => $signature,
+                    'api_key' => $this->apiKey,
+                ]);
 
             $data = $response->json();
             if (isset($data['secure_url'])) {
@@ -54,6 +59,10 @@ class CloudinaryService
             }
         } catch (\Throwable $e) {
             // fallback local
+        } finally {
+            if ($stream && is_resource($stream)) {
+                fclose($stream);
+            }
         }
 
         return null;
@@ -117,7 +126,8 @@ class CloudinaryService
 
     protected function uploadEndpoint(): string
     {
-        return $this->baseUrl() . '/image/upload';
+        // resource_type "auto" : gère images, PDF et documents Office (raw)
+        return $this->baseUrl() . '/auto/upload';
     }
 
     public function publicIdFromUrl(string $url): ?string

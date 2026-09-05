@@ -50,7 +50,7 @@ class DocumentController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'category_id' => ['nullable', 'exists:categories,id'],
             'description' => ['nullable', 'string'],
-            'file' => ['nullable', 'file'],
+            'file' => ['nullable', 'file', 'max:25600'],
         ]);
 
         $filePath = null;
@@ -65,9 +65,11 @@ class DocumentController extends Controller
             $fileSize = $file->getSize();
             $fileType = strtolower($file->getClientOriginalExtension());
 
-            // Tentative d'envoi vers Cloudinary pour persistance cloud (si configuré)
+            // Tentative d'envoi vers Cloudinary pour persistance cloud (si configuré).
+            // Le fichier est envoyé en streaming (pas chargé en mémoire) et le
+            // transfert est limité dans le temps : si ça échoue, on garde le local.
             $cloudinary = new \App\Services\CloudinaryService();
-            $cloudUrl = $cloudinary->upload($localPath);
+            $cloudUrl = $cloudinary->upload($localPath, $fileName);
 
             // On garde l'URL cloud si disponible, sinon le chemin local (démo)
             $filePath = $cloudUrl ?: $localPath;
@@ -88,6 +90,14 @@ class DocumentController extends Controller
             'file_type' => $fileType,
             'is_favorite' => false,
         ]);
+
+        // Réponse JSON pour l'upload AJAX (redirection côté client)
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'redirect' => route('documents.index'),
+            ]);
+        }
 
         return redirect()->route('documents.index')->with('success', 'Document ajouté avec succès');
     }
@@ -141,6 +151,27 @@ class DocumentController extends Controller
         return redirect()->route('documents.index')->with('success', 'Document déplacé vers la corbeille');
     }
 
+    public function preview(Request $request, $id)
+    {
+        $document = $request->user()->documents()->findOrFail($id);
+
+        if (empty($document->file_path)) {
+            abort(404, 'Aucun fichier associé à ce document.');
+        }
+
+        // Fichier stocké sur le cloud (URL Cloudinary) : redirection vers l'URL
+        if (str_starts_with($document->file_path, 'http')) {
+            return redirect()->away($document->file_path);
+        }
+
+        // Fichier local : renvoyé en inline (permet l'aperçu image/PDF dans le navigateur)
+        if (Storage::disk('public')->exists($document->file_path)) {
+            return Storage::disk('public')->response($document->file_path);
+        }
+
+        abort(404, 'Fichier introuvable.');
+    }
+
     public function download(Request $request, $id)
     {
         $document = $request->user()->documents()->findOrFail($id);
@@ -159,6 +190,6 @@ class DocumentController extends Controller
             return Storage::disk('public')->download($document->file_path, $downloadName);
         }
 
-        return back()->with('error', 'Fichier introuvable.');
+        return back()->with('error', 'Fichier introuvable. Il a probablement été perdu lors d\'un redéploiement.');
     }
 }

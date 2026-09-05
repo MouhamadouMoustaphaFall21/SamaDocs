@@ -29,6 +29,9 @@ COPY . .
 # Remplacement du fichier principal de configuration Nginx
 COPY docker/nginx.conf /etc/nginx/nginx.conf
 
+# Configuration PHP (limites d'upload, mémoire, temps d'exécution)
+COPY docker/php.ini /usr/local/etc/php/conf.d/samadocs.ini
+
 # Installation des dépendances
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 

@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initMobileNav();
   initPasswordStrength();
   initSettingsNav();
+  initAjaxUpload();
 });
 
 /* ============================================
@@ -169,12 +170,95 @@ function initUploadZone() {
       input.addEventListener('change', () => {
         if (input.files.length) {
           const name = input.files[0].name;
-          const nameInput = zone.closest('.modal-body')?.querySelector('[name="document_name"]');
+          const nameInput = zone.closest('.modal-body')?.querySelector('[name="name"]');
           if (nameInput) nameInput.value = name.replace(/\.[^.]+$/, '');
           showUploadPreview(input.files[0], zone);
         }
       });
     }
+  });
+}
+
+/* ============================================
+   UPLOAD AJAX avec barre de progression
+   ============================================ */
+function initAjaxUpload() {
+  const form = document.getElementById('add-doc-form');
+  if (!form) return;
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const fileInput = form.querySelector('input[type="file"]');
+    const progressWrap = document.getElementById('upload-progress');
+    const errorBox = document.getElementById('upload-error');
+
+    if (!fileInput || !fileInput.files.length) {
+      form.submit();
+      return;
+    }
+
+    if (errorBox) { errorBox.textContent = ''; errorBox.style.display = 'none'; }
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Envoi en cours...';
+    }
+    if (progressWrap) progressWrap.style.display = 'block';
+    const bar = progressWrap?.querySelector('.upload-progress-bar');
+    if (bar) bar.style.width = '0%';
+    const label = document.getElementById('upload-progress-label');
+    if (label) label.textContent = '0%';
+
+    const data = new FormData(form);
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', form.action);
+    xhr.setRequestHeader('Accept', 'application/json');
+    const csrf = form.querySelector('input[name="_token"]');
+    if (csrf) xhr.setRequestHeader('X-CSRF-TOKEN', csrf.value);
+
+    xhr.upload.onprogress = (ev) => {
+      if (ev.lengthComputable && bar) {
+        const pct = Math.round((ev.loaded / ev.total) * 100);
+        bar.style.width = pct + '%';
+        if (label) label.textContent = pct + '%';
+      }
+    };
+
+    xhr.onload = () => {
+      let resp = null;
+      try { resp = JSON.parse(xhr.responseText); } catch (err) { /* corps non JSON */ }
+
+      if (xhr.status >= 200 && xhr.status < 300 && resp && resp.redirect) {
+        window.location.href = resp.redirect;
+        return;
+      }
+
+      const msg = (resp && resp.message) ||
+        (resp && resp.errors && Object.values(resp.errors).flat().join(' ')) ||
+        'Une erreur est survenue pendant l\u2019envoi.';
+      if (errorBox) { errorBox.textContent = msg; errorBox.style.display = 'block'; }
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-check"></i> Enregistrer';
+      }
+      if (progressWrap) progressWrap.style.display = 'none';
+      if (bar) bar.style.width = '0%';
+    };
+
+    xhr.onerror = () => {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-check"></i> Enregistrer';
+      }
+      if (progressWrap) progressWrap.style.display = 'none';
+      if (errorBox) {
+        errorBox.textContent = 'Erreur de connexion. V\u00e9rifiez votre r\u00e9seau puis r\u00e9essayez.';
+        errorBox.style.display = 'block';
+      }
+    };
+
+    xhr.send(data);
   });
 }
 

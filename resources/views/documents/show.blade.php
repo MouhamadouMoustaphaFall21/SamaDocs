@@ -19,15 +19,21 @@
 
   <!-- PREVIEW -->
   <div class="card mb-6" style="padding:0;overflow:hidden;">
-    <div style="background:var(--bg-secondary);min-height:400px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;">
-      <div style="width:80px;height:80px;border-radius:var(--radius-xl);background:{{ $document->category->color ?? '#9ca3af' }}18;color:{{ $document->category->color ?? '#9ca3af' }};display:flex;align-items:center;justify-content:center;font-size:2.5rem;">
-        <i class="fas {{ $document->icon }}"></i>
+    @if ($document->file_path && in_array(strtolower($document->extension), ['jpg', 'jpeg', 'png', 'gif', 'webp']))
+      <img src="{{ route('documents.preview', $document) }}" alt="{{ $document->name }}" style="width:100%;max-height:600px;object-fit:contain;display:block;background:var(--bg-secondary);" loading="lazy">
+    @elseif ($document->file_path && strtolower($document->extension) === 'pdf')
+      <iframe src="{{ route('documents.preview', $document) }}" title="{{ $document->name }}" style="width:100%;height:70vh;border:none;display:block;background:var(--bg-secondary);"></iframe>
+    @else
+      <div style="background:var(--bg-secondary);min-height:300px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;">
+        <div style="width:80px;height:80px;border-radius:var(--radius-xl);background:{{ $document->category->color ?? '#9ca3af' }}18;color:{{ $document->category->color ?? '#9ca3af' }};display:flex;align-items:center;justify-content:center;font-size:2.5rem;">
+          <i class="fas {{ $document->icon }}"></i>
+        </div>
+        <div class="text-secondary">Aperçu non disponible pour ce type de fichier</div>
+        @if ($document->file_path)
+          <a href="{{ route('documents.download', $document) }}" class="btn btn-primary"><i class="fas fa-download"></i> Télécharger</a>
+        @endif
       </div>
-      <div class="text-secondary">Aperçu du document</div>
-      @if ($document->file_path)
-        <a href="{{ route('documents.download', $document) }}" class="btn btn-primary"><i class="fas fa-download"></i> Télécharger</a>
-      @endif
-    </div>
+    @endif
   </div>
 
   <!-- INFOS -->
