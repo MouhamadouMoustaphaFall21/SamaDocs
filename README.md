@@ -1,6 +1,6 @@
 # SamaDocs
 
-SamaDocs est une application web qui permet de stocker, organiser et retrouver facilement tous vos documents depuis n'importe quel appareil. Construite avec Laravel et SQLite, elle est conçue pour être simple, rapide et utilisable en priorité sur mobile.
+SamaDocs est une application web qui permet de stocker, organiser et retrouver facilement tous vos documents depuis n'importe quel appareil. Construite avec Laravel et PostgreSQL, elle est conçue pour être simple, rapide et utilisable en priorité sur mobile.
 
 ## Fonctionnalités
 
@@ -18,7 +18,7 @@ SamaDocs est une application web qui permet de stocker, organiser et retrouver f
 ## Technologies
 
 - Laravel 10 (PHP 8.1+)
-- SQLite
+- PostgreSQL
 - Blade + CSS personnalisé
 - Font Awesome
 - Service Worker + Web App Manifest (PWA)
@@ -30,7 +30,7 @@ SamaDocs est une application web qui permet de stocker, organiser et retrouver f
 - PHP 8.1 ou plus récent
 - Composer
 - Node.js (optionnel, pour les assets)
-- Extension PHP SQLite
+- Extension PHP PostgreSQL (`pdo_pgsql`)
 
 ### Étapes
 
@@ -46,8 +46,8 @@ composer install
 cp .env.example .env
 php artisan key:generate
 
-# 4. Créer la base de données SQLite
-touch database/database.sqlite
+# 4. Créer la base de données PostgreSQL et configurer DB_* dans .env
+createdb samadocs
 
 # 5. Lancer les migrations et le seed (données de démonstration)
 php artisan migrate --seed

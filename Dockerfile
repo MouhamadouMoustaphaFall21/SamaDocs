@@ -9,12 +9,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libjpeg62-turbo-dev \
     libfreetype6-dev \
     libsqlite3-dev \
+    libpq-dev \
     pkg-config \
     nginx \
     curl \
     libonig-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo pdo_mysql pdo_sqlite zip gd mbstring exif \
+    && docker-php-ext-install pdo pdo_mysql pdo_sqlite pgsql pdo_pgsql zip gd mbstring exif \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Installation de Composer
@@ -38,5 +39,5 @@ RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cac
 # Exposition du port 8080 (défini dans votre nginx.conf)
 EXPOSE 8080
 
-# Démarrage simultané de PHP-FPM et Nginx
-CMD php-fpm -D && nginx -g "daemon off;"
+# Démarrage (préparation .env, clé, PostgreSQL, migrations, puis PHP-FPM + Nginx)
+CMD bash render/start-docker.sh

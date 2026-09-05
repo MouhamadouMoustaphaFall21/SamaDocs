@@ -2,11 +2,8 @@
 set -e
 
 echo "==> Preparing filesystem"
-ROOT="/var/www/html"
-mkdir -p "$ROOT/database"
-touch "$ROOT/database/database.sqlite"
-chown -R www-data:www-data "$ROOT/database"
-chmod -R 775 "$ROOT/database"
+chown -R www-data:www-data storage bootstrap/cache || true
+chmod -R 775 storage bootstrap/cache || true
 
 echo "==> .env preparation"
 if [ ! -f .env ]; then
@@ -22,16 +19,13 @@ if [ -z "${APP_KEY}" ] && ! grep -q '^APP_KEY=[^[:space:]]' .env; then
     php artisan key:generate --force
 fi
 
-# Forcer SQLite avec chemin absolu de maniere idempotente
-if grep -q '^DB_CONNECTION=' .env; then
-    sed -i 's/^DB_CONNECTION=.*/DB_CONNECTION=sqlite/' .env
-else
-    echo "DB_CONNECTION=sqlite" >> .env
-fi
-if grep -q '^DB_DATABASE=' .env; then
-    sed -i "s|^DB_DATABASE=.*|DB_DATABASE=$ROOT/database/database.sqlite|" .env
-else
-    echo "DB_DATABASE=$ROOT/database/database.sqlite" >> .env
+# Forcer PostgreSQL (DATABASE_URL est fournie par Render via le service managé)
+sed -i 's/^DB_CONNECTION=.*/DB_CONNECTION=pgsql/' .env || true
+grep -q '^DB_CONNECTION=' .env || echo "DB_CONNECTION=pgsql" >> .env
+if [ -n "$DATABASE_URL" ]; then
+    sed -i "s|^DATABASE_URL=.*|DATABASE_URL=$DATABASE_URL|" .env || true
+    grep -q '^DATABASE_URL=' .env || echo "DATABASE_URL=$DATABASE_URL" >> .env
+    # Les variables DB_* individuelles peuvent rester, DATABASE_URL prime dans Laravel
 fi
 
 echo "==> Migrations + seeds"

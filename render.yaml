@@ -1,3 +1,10 @@
+databases:
+  - name: samadocs-db
+    plan: free
+    databaseName: samadocs
+    user: samadocs
+    region: oregon
+
 services:
   - type: web
     name: samadocs
@@ -12,11 +19,15 @@ services:
       - key: APP_URL
         sync: false
       - key: DB_CONNECTION
-        value: sqlite
+        value: pgsql
+      - key: DATABASE_URL
+        fromDatabase:
+          name: samadocs-db
+          property: connectionString
       - key: SESSION_DRIVER
-        value: file
+        value: database
       - key: CACHE_DRIVER
-        value: file
+        value: database
       - key: FILESYSTEM_DISK
         value: local
       - key: CLOUDINARY_CLOUD_NAME
