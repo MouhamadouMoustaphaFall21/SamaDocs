@@ -1,6 +1,6 @@
 FROM php:8.2-fpm
 
-# Installation des dépendances système (y compris libonig-dev pour mbstring)
+# Installation des dépendances système
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     unzip \
@@ -20,21 +20,23 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Installation de Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Configuration du répertoire de travail
 WORKDIR /var/www/html
 
-# Copie des fichiers de l'application
+# Copie des fichiers du projet
 COPY . .
 
-# Installation des dépendances PHP avec Composer
+# Remplacement du fichier principal de configuration Nginx
+COPY docker/nginx.conf /etc/nginx/nginx.conf
+
+# Installation des dépendances
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-# Configuration des permissions pour les dossiers de stockage/cache (si Laravel/Symfony)
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 775 /var/www/html
+# Permissions pour Laravel
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
+    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Exposition du port Nginx
-EXPOSE 80
+# Exposition du port 8080 (défini dans votre nginx.conf)
+EXPOSE 8080
 
-# Démarrage de Nginx et PHP-FPM
-CMD service nginx start && php-fpm
+# Démarrage simultané de PHP-FPM et Nginx
+CMD php-fpm -D && nginx -g "daemon off;"
