@@ -1,40 +1,40 @@
-# Syntaxe stable
-# v3 - fix sqlite headers + invalidation cache
-FROM php:8.1-fpm
+FROM php:8.2-fpm
 
-# Dépendances système (une seule couche, invalidation via ENV build)
-ENV SAMADOCS_BUILD=2026-09-02-3
+# Installation des dépendances système (y compris libonig-dev pour mbstring)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    git unzip libzip-dev libpng-dev libjpeg62-turbo-dev libfreetype6-dev \
-    libsqlite3-dev pkg-config nginx curl \
+    git \
+    unzip \
+    libzip-dev \
+    libpng-dev \
+    libjpeg62-turbo-dev \
+    libfreetype6-dev \
+    libsqlite3-dev \
+    pkg-config \
+    nginx \
+    curl \
+    libonig-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install pdo pdo_mysql pdo_sqlite zip gd mbstring exif \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Composer
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+# Installation de Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
+# Configuration du répertoire de travail
 WORKDIR /var/www/html
 
-# Copie du code applicatif
+# Copie des fichiers de l'application
 COPY . .
 
-# Installer les dépendances (sans dev)
-RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+# Installation des dépendances PHP avec Composer
+RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-# Droits et dossiers
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
-    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+# Configuration des permissions pour les dossiers de stockage/cache (si Laravel/Symfony)
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 775 /var/www/html
 
-# Copie de la config nginx
-COPY docker/nginx.conf /etc/nginx/nginx.conf
-COPY docker/php.ini /usr/local/etc/php/conf.d/zz-app.ini
+# Exposition du port Nginx
+EXPOSE 80
 
-# Désactiver le site nginx par defaut si present
-RUN rm -f /etc/nginx/sites-enabled/default
-
-EXPOSE 8080
-
-WORKDIR /var/www/html
-
-CMD ["bash", "/var/www/html/render/start-docker.sh"]
+# Démarrage de Nginx et PHP-FPM
+CMD service nginx start && php-fpm
