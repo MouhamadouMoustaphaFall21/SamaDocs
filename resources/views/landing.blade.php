@@ -52,63 +52,12 @@
       </div>
     </div>
     <div class="landing-hero-visual">
-      <div class="landing-hero-dashboard">
-        <div class="landing-hero-dashboard-header">
-          <div class="landing-hero-dashboard-dot" style="background:#ef4444;"></div>
-          <div class="landing-hero-dashboard-dot" style="background:#f59e0b;"></div>
-          <div class="landing-hero-dashboard-dot" style="background:#22c55e;"></div>
-        </div>
-        <div class="landing-hero-dashboard-body">
-          <div class="mock-search">
-            <i class="fas fa-search"></i>
-            <span>Rechercher un document...</span>
-          </div>
-          <div class="mock-stats">
-            <div class="mock-stat">
-              <div class="mock-stat-value">127</div>
-              <div class="mock-stat-label">Documents</div>
-            </div>
-            <div class="mock-stat">
-              <div class="mock-stat-value">8</div>
-              <div class="mock-stat-label">Catégories</div>
-            </div>
-            <div class="mock-stat">
-              <div class="mock-stat-value">1.4 GB</div>
-              <div class="mock-stat-label">Stockage</div>
-            </div>
-          </div>
-          <div class="mock-docs">
-            <div class="mock-doc">
-              <div class="mock-doc-icon" style="background:#fef2f2;color:#dc2626;"><i class="fas fa-file-pdf"></i></div>
-              <div class="mock-doc-info">
-                <div class="mock-doc-name">Certificat de scolarité.pdf</div>
-                <div class="mock-doc-meta">Éducation · 1.2 MB</div>
-              </div>
-            </div>
-            <div class="mock-doc">
-              <div class="mock-doc-icon" style="background:#eff6ff;color:#2563eb;"><i class="fas fa-file-pdf"></i></div>
-              <div class="mock-doc-info">
-                <div class="mock-doc-name">Contrat de travail.pdf</div>
-                <div class="mock-doc-meta">Travail · 850 KB</div>
-              </div>
-            </div>
-            <div class="mock-doc">
-              <div class="mock-doc-icon" style="background:#f0fdf4;color:#16a34a;"><i class="fas fa-file-image"></i></div>
-              <div class="mock-doc-info">
-                <div class="mock-doc-name">CNI.jpg</div>
-                <div class="mock-doc-meta">Personnel · 2.1 MB</div>
-              </div>
-            </div>
-            <div class="mock-doc">
-              <div class="mock-doc-icon" style="background:#fef2f2;color:#dc2626;"><i class="fas fa-file-pdf"></i></div>
-              <div class="mock-doc-info">
-                <div class="mock-doc-name">CV.pdf</div>
-                <div class="mock-doc-meta">Personnel · 950 KB</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <img
+        class="landing-hero-image"
+        src="{{ asset('img/Samadocs.jpeg') }}"
+        alt="Illustration de gestion de documents numériques"
+        loading="eager"
+      />
     </div>
   </div>
 </section>

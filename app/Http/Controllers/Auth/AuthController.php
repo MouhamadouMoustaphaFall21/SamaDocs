@@ -32,7 +32,7 @@ class AuthController extends Controller
         }
 
         return back()
-            ->withErrors(['email' => 'Ces identifiants ne correspondent pas à nos enregistrements.'])
+            ->withErrors(['email' => 'Adresse e-mail ou mot de passe incorrect.'])
             ->onlyInput('email');
     }
 
